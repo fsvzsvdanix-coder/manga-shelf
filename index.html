@@ -252,8 +252,9 @@
 </div>
 
 <script>
-  // Скрипт Telegram есть и в обычном браузере, но initData заполнен только внутри Telegram.
-  const tg = window.Telegram && Telegram.WebApp && Telegram.WebApp.initData ? Telegram.WebApp : null;
+  // Скрипт Telegram есть и в обычном браузере, там platform — "unknown".
+  // initData не годится: при запуске кнопкой под чатом Telegram оставляет его пустым.
+  const tg = window.Telegram && Telegram.WebApp && Telegram.WebApp.platform !== "unknown" ? Telegram.WebApp : null;
   if (tg) {
     tg.ready();
     tg.expand();
