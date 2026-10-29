@@ -272,10 +272,11 @@
     document.body.appendChild(petal);
   }
 
-  // Бот кладёт список книг в адрес страницы: #base64url(JSON) — [[id, название, страниц, формат], …]
+  // Бот кладёт список книг в адрес страницы: ?b=base64url(JSON) — [[id, название, страниц, формат], …]
+  // Не в #: туда Telegram дописывает свои данные запуска.
   function readBooks() {
     try {
-      const raw = location.hash.slice(1).replace(/-/g, "+").replace(/_/g, "/");
+      const raw = (new URLSearchParams(location.search).get("b") || "").replace(/-/g, "+").replace(/_/g, "/");
       const bytes = Uint8Array.from(atob(raw), c => c.charCodeAt(0));
       return JSON.parse(new TextDecoder().decode(bytes)).map(([id, title, pages, fmt]) => ({ id, title, pages, fmt }));
     } catch (e) {
