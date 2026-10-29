@@ -1,0 +1,443 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Моя полка</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;800&display=swap" rel="stylesheet">
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+  :root {
+    --sky-top: #ffd6e8;
+    --sky-bottom: #e6dcff;
+    --dots: rgba(255, 255, 255, .55);
+    --ink: #2b2140;
+    --muted: #7a6390;
+    --paper: #fffafc;
+    --lacquer: #8e4a6b;
+    --lacquer-light: #c2678f;
+    --lacquer-dark: #5c2c46;
+    --back: #f6e3ee;
+    --accent: #ff5d8f;
+    --accent-2: #7c5cff;
+    --gold: #ffd166;
+    --petal: #ffb7d0;
+  }
+  :root.dark {
+    --sky-top: #1a1433;
+    --sky-bottom: #3a2458;
+    --dots: rgba(255, 255, 255, .07);
+    --ink: #0d0a18;
+    --muted: #c7b4e8;
+    --paper: #2a2042;
+    --lacquer: #5b2f5e;
+    --lacquer-light: #85457f;
+    --lacquer-dark: #2e1733;
+    --back: #22183a;
+    --petal: #ff9ec3;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; min-height: 100%; }
+  body {
+    font-family: "M PLUS Rounded 1c", -apple-system, "Segoe UI", Roboto, sans-serif;
+    color: var(--ink);
+    background:
+      radial-gradient(var(--dots) 1.4px, transparent 1.6px) 0 0 / 14px 14px,
+      linear-gradient(180deg, var(--sky-top), var(--sky-bottom)) fixed;
+    min-height: 100vh;
+    padding: 16px 16px 120px;
+    overflow-x: hidden;
+  }
+  :root.dark body { color: #f4ecff; }
+  :root.dark body::before {
+    content: ""; position: fixed; inset: 0; pointer-events: none;
+    background:
+      radial-gradient(1.5px 1.5px at 12% 18%, #fff, transparent),
+      radial-gradient(1px 1px at 70% 8%, #fff, transparent),
+      radial-gradient(1.5px 1.5px at 85% 30%, #ffe9a8, transparent),
+      radial-gradient(1px 1px at 35% 40%, #fff, transparent),
+      radial-gradient(1.5px 1.5px at 55% 22%, #fff, transparent);
+  }
+
+  /* Лепестки сакуры */
+  .petal {
+    position: fixed; top: -20px; width: 12px; height: 9px; pointer-events: none; z-index: 0;
+    background: var(--petal); border-radius: 12px 1px 12px 1px; opacity: .85;
+    animation: fall linear infinite, sway ease-in-out infinite alternate;
+  }
+  @keyframes fall { to { transform: translateY(110vh) rotate(540deg); } }
+  @keyframes sway { from { margin-left: -24px; } to { margin-left: 24px; } }
+  @media (prefers-reduced-motion: reduce) { .petal { display: none; } }
+
+  main { position: relative; z-index: 1; max-width: 720px; margin: 0 auto; }
+  header { display: flex; align-items: flex-end; gap: 10px; margin-bottom: 14px; }
+  header h1 {
+    margin: 0; font-size: 26px; font-weight: 800; line-height: 1; color: #fff;
+    -webkit-text-stroke: 1.5px var(--ink); paint-order: stroke fill;
+    text-shadow: 3px 3px 0 var(--accent);
+  }
+  header .kanji { display: block; font-size: 12px; letter-spacing: 4px; color: var(--accent-2); margin-bottom: 4px; -webkit-text-stroke: 0; text-shadow: none; }
+  header .count {
+    margin-left: auto; font-size: 12px; font-weight: 800; color: var(--ink);
+    background: var(--gold); border: 2px solid var(--ink); border-radius: 999px; padding: 4px 10px;
+    box-shadow: 2px 2px 0 var(--ink); white-space: nowrap;
+  }
+  .search {
+    width: 100%; padding: 11px 16px; border-radius: 999px; border: 2.5px solid var(--ink);
+    background: var(--paper); color: inherit; font: 500 15px "M PLUS Rounded 1c", sans-serif;
+    margin-bottom: 20px; outline: none; box-shadow: 3px 3px 0 var(--ink);
+  }
+  .search:focus { box-shadow: 3px 3px 0 var(--accent); }
+
+  /* Сиори — талисман полки (свой персонаж) и её реплика */
+  .hero { display: flex; align-items: flex-end; gap: 6px; margin: -6px 0 -10px; position: relative; z-index: 2; }
+  .mascot { width: 92px; height: 110px; flex: none; cursor: pointer; filter: drop-shadow(3px 3px 0 rgba(43, 33, 64, .35)); }
+  .mascot.bounce { animation: bounce .5s cubic-bezier(.3, 1.8, .5, 1); }
+  @keyframes bounce { 40% { transform: translateY(-12px) rotate(-4deg); } }
+  .bubble {
+    position: relative; margin-bottom: 52px; padding: 9px 14px; max-width: 220px;
+    background: var(--paper); border: 2.5px solid var(--ink); border-radius: 18px;
+    font-size: 13.5px; font-weight: 800; box-shadow: 3px 3px 0 var(--ink);
+  }
+  .bubble::before {
+    content: ""; position: absolute; left: -10px; bottom: 10px; width: 14px; height: 14px;
+    background: var(--paper); border-left: 2.5px solid var(--ink); border-bottom: 2.5px solid var(--ink);
+    transform: rotate(45deg);
+  }
+  .sfx {
+    position: fixed; z-index: 6; pointer-events: none; font-size: 22px; font-weight: 800; color: var(--gold);
+    -webkit-text-stroke: 1.5px var(--ink); paint-order: stroke fill; text-shadow: 2px 2px 0 var(--accent);
+    animation: pop .9s ease-out forwards;
+  }
+  @keyframes pop {
+    0% { transform: translate(-50%, 0) scale(.4) rotate(-12deg); opacity: 0; }
+    25% { transform: translate(-50%, -18px) scale(1.15) rotate(6deg); opacity: 1; }
+    100% { transform: translate(-50%, -46px) scale(1) rotate(0); opacity: 0; }
+  }
+
+  .bookcase {
+    position: relative;
+    border: 3px solid var(--ink);
+    border-radius: 16px;
+    background: linear-gradient(180deg, var(--lacquer-light), var(--lacquer) 30%, var(--lacquer-dark));
+    padding: 10px 10px 18px;
+    box-shadow: 6px 6px 0 var(--ink);
+  }
+  .bookcase::before {
+    content: "🏮"; position: absolute; top: -18px; right: 16px; font-size: 28px;
+    filter: drop-shadow(2px 2px 0 var(--ink)); animation: swing 3s ease-in-out infinite alternate;
+    transform-origin: top center;
+  }
+  @keyframes swing { from { transform: rotate(-6deg); } to { transform: rotate(6deg); } }
+  .shelf {
+    display: flex; align-items: flex-end; gap: 3px;
+    min-height: 168px; padding: 12px 6px 0; position: relative;
+    background:
+      radial-gradient(rgba(0, 0, 0, .06) 1px, transparent 1.2px) 0 0 / 8px 8px,
+      var(--back);
+    border: 2.5px solid var(--ink); border-bottom: 0; border-radius: 10px 10px 0 0;
+  }
+  .shelf::after {
+    content: ""; position: absolute; left: -6px; right: -6px; bottom: -14px; height: 14px; z-index: 1;
+    background: linear-gradient(180deg, var(--lacquer-light), var(--lacquer-dark));
+    border: 2.5px solid var(--ink); border-radius: 4px;
+  }
+  .shelf + .shelf { margin-top: 24px; }
+  .shelf .decor { font-size: 32px; margin-left: auto; padding-bottom: 2px; filter: drop-shadow(2px 2px 0 rgba(43, 33, 64, .35)); }
+
+  .book {
+    position: relative; flex: none; padding: 0; cursor: pointer;
+    border: 2px solid var(--ink); border-bottom-width: 0; border-radius: 6px 6px 0 0;
+    color: var(--ink); font: 800 10.5px/1.1 "M PLUS Rounded 1c", sans-serif;
+    transition: transform .25s cubic-bezier(.3, 1.6, .5, 1);
+    overflow: hidden;
+  }
+  .book::before {  /* блик, как на глянцевой обложке */
+    content: ""; position: absolute; top: 0; bottom: 0; left: 18%; width: 22%;
+    background: linear-gradient(90deg, rgba(255, 255, 255, .0), rgba(255, 255, 255, .55), rgba(255, 255, 255, .0));
+  }
+  .book .band { position: absolute; left: 0; right: 0; height: 4px; background: var(--ink); opacity: .85; }
+  .book .band.top { top: 10px; }
+  .book .band.bottom { bottom: 16px; }
+  .book .spine {
+    position: absolute; inset: 18px 3px 22px; display: flex; align-items: center; justify-content: center;
+    writing-mode: vertical-rl; transform: rotate(180deg);
+    background: rgba(255, 255, 255, .82); border-radius: 6px; padding: 4px 1px;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .book .fmt { position: absolute; bottom: 3px; left: 0; right: 0; text-align: center; font-size: 8px; color: #fff; }
+  .book .star { position: absolute; top: 1px; left: 0; right: 0; text-align: center; font-size: 8px; color: #fff; }
+  .book.tilt { transform: rotate(-5deg); transform-origin: bottom left; margin-left: 7px; }
+  .book.selected { transform: translateY(-18px) rotate(-2deg); }
+  .book:active { transform: scale(.96); }
+
+  .empty {
+    text-align: center; padding: 34px 20px; font-size: 15px; font-weight: 500;
+    background: var(--paper); border: 3px solid var(--ink); border-radius: 22px; box-shadow: 5px 5px 0 var(--ink);
+  }
+  .empty .big { font-size: 52px; display: block; margin-bottom: 8px; }
+
+  .sheet {
+    position: fixed; left: 12px; right: 12px; bottom: 12px; z-index: 5; max-width: 696px; margin: 0 auto;
+    background:
+      radial-gradient(rgba(255, 93, 143, .12) 1.2px, transparent 1.4px) 0 0 / 10px 10px,
+      var(--paper);
+    border: 3px solid var(--ink); border-radius: 22px; padding: 18px 16px 18px;
+    box-shadow: 6px 6px 0 var(--ink);
+    transform: translateY(130%); transition: transform .3s cubic-bezier(.3, 1.4, .5, 1);
+  }
+  .sheet.open { transform: none; }
+  .sheet::before {  /* хвостик, как у реплики в манге */
+    content: ""; position: absolute; top: -14px; left: 34px; width: 22px; height: 22px;
+    background: var(--paper); border-left: 3px solid var(--ink); border-top: 3px solid var(--ink);
+    transform: rotate(45deg); border-radius: 4px 0 0 0;
+  }
+  .sheet h2 { margin: 0 0 6px; font-size: 17px; font-weight: 800; line-height: 1.3; }
+  .sheet .meta { color: var(--muted); font-size: 13px; font-weight: 500; margin-bottom: 14px; }
+  .sheet button {
+    width: 100%; border: 2.5px solid var(--ink); border-radius: 999px; padding: 12px;
+    font: 800 15px "M PLUS Rounded 1c", sans-serif; color: #fff; cursor: pointer;
+    background: linear-gradient(90deg, var(--accent), var(--accent-2)); box-shadow: 3px 3px 0 var(--ink);
+  }
+  .sheet button:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--ink); }
+  .sheet .hint { color: var(--muted); font-size: 12px; text-align: center; margin-top: 10px; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1><span class="kanji">本棚 · ほんだな</span>Моя полка</h1>
+    <div class="count" id="count"></div>
+  </header>
+  <input class="search" id="search" type="search" placeholder="🔍 Найти книгу…" autocomplete="off">
+  <div class="hero">
+    <svg class="mascot" id="mascot" viewBox="0 0 100 120" aria-label="Сиори">
+      <g stroke="#2b2140" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round">
+        <path d="M14 52 Q12 18 50 14 Q88 18 86 52 L88 96 Q74 104 66 92 L34 92 Q26 104 12 96 Z" fill="#ff8fb1"/>
+        <path d="M33 80 Q50 74 67 80 L74 116 L26 116 Z" fill="#a78bfa"/>
+        <path d="M44 80 L50 88 L56 80" fill="#fff"/>
+        <rect x="34" y="90" width="32" height="20" rx="3" fill="#ffd166"/>
+        <path d="M50 90 V110" fill="none"/>
+        <circle cx="35" cy="99" r="5" fill="#ffe9de"/>
+        <circle cx="65" cy="99" r="5" fill="#ffe9de"/>
+        <ellipse cx="50" cy="54" rx="28" ry="26" fill="#ffe9de"/>
+        <path d="M21 50 Q22 20 50 19 Q78 20 79 50 Q72 38 64 42 Q58 30 50 41 Q42 30 36 42 Q28 38 21 50 Z" fill="#ff8fb1"/>
+        <path d="M50 19 Q54 4 64 8" fill="none" stroke="#ff8fb1" stroke-width="4"/>
+        <path d="M50 19 Q54 4 64 8" fill="none"/>
+        <path d="M68 26 l4 -8 l4 8 l-4 6 Z" fill="#ffd166"/>
+        <ellipse cx="39" cy="58" rx="5.5" ry="7.5" fill="#2b2140"/>
+        <ellipse cx="61" cy="58" rx="5.5" ry="7.5" fill="#2b2140"/>
+      </g>
+      <ellipse cx="39" cy="60" rx="4" ry="5" fill="#7c5cff"/>
+      <ellipse cx="61" cy="60" rx="4" ry="5" fill="#7c5cff"/>
+      <circle cx="37" cy="55" r="2.2" fill="#fff"/>
+      <circle cx="59" cy="55" r="2.2" fill="#fff"/>
+      <circle cx="41" cy="62" r="1" fill="#fff"/>
+      <circle cx="63" cy="62" r="1" fill="#fff"/>
+      <ellipse cx="31" cy="67" rx="5" ry="2.6" fill="#ff5d8f" opacity=".35"/>
+      <ellipse cx="69" cy="67" rx="5" ry="2.6" fill="#ff5d8f" opacity=".35"/>
+      <path d="M46 68 Q50 72 54 68" fill="none" stroke="#2b2140" stroke-width="2.2" stroke-linecap="round"/>
+    </svg>
+    <div class="bubble" id="bubble"></div>
+  </div>
+  <div id="case"></div>
+</main>
+
+<div class="sheet" id="sheet">
+  <h2 id="sheet-title"></h2>
+  <div class="meta" id="sheet-meta"></div>
+  <button id="send">📥 Прислать в чат</button>
+  <div class="hint" id="sheet-hint">Бот пришлёт файл, полка закроется ✨</div>
+</div>
+
+<script>
+  // Скрипт Telegram есть и в обычном браузере, но initData заполнен только внутри Telegram.
+  const tg = window.Telegram && Telegram.WebApp && Telegram.WebApp.initData ? Telegram.WebApp : null;
+  if (tg) {
+    tg.ready();
+    tg.expand();
+    if (tg.colorScheme === "dark") document.documentElement.classList.add("dark");
+  } else if (matchMedia("(prefers-color-scheme: dark)").matches) {
+    document.documentElement.classList.add("dark");
+  }
+
+  for (let i = 0; i < 14; i++) {
+    const petal = document.createElement("div");
+    petal.className = "petal";
+    petal.style.left = Math.random() * 100 + "vw";
+    petal.style.animationDuration = `${7 + Math.random() * 7}s, ${2 + Math.random() * 2}s`;
+    petal.style.animationDelay = `${-Math.random() * 12}s, 0s`;
+    petal.style.transform = `scale(${0.6 + Math.random() * 0.7})`;
+    document.body.appendChild(petal);
+  }
+
+  // Бот кладёт список книг в адрес страницы: #base64url(JSON) — [[id, название, страниц, формат], …]
+  function readBooks() {
+    try {
+      const raw = location.hash.slice(1).replace(/-/g, "+").replace(/_/g, "/");
+      const bytes = Uint8Array.from(atob(raw), c => c.charCodeAt(0));
+      return JSON.parse(new TextDecoder().decode(bytes)).map(([id, title, pages, fmt]) => ({ id, title, pages, fmt }));
+    } catch (e) {
+      return [];
+    }
+  }
+
+  const COLORS = ["#ff8fb1", "#a78bfa", "#7dd3fc", "#86efac", "#fcd34d", "#fda4af", "#c4b5fd", "#67e8f9", "#f9a8d4", "#fdba74", "#93c5fd", "#bef264"];
+  const DECOR = ["🌸", "🍡", "🎐", "🐈", "🍙", "🎎"];
+  const GAP = 3, DECOR_WIDTH = 44;
+  const bookWidth = book => Math.round(28 + Math.min(book.pages, 200) / 200 * 18);
+
+  // Раскладываем книги по полкам по реальной ширине экрана; на последней оставляем место для украшения.
+  function packShelves(list, width) {
+    const shelves = [[]];
+    let used = 0;
+    for (const book of list) {
+      const w = bookWidth(book) + GAP;
+      if (used + w > width && shelves[shelves.length - 1].length) {
+        shelves.push([]);
+        used = 0;
+      }
+      shelves[shelves.length - 1].push(book);
+      used += w;
+    }
+    if (used + DECOR_WIDTH > width) shelves.push([]);
+    return shelves;
+  }
+
+  function hash(text) {
+    let h = 2166136261;
+    for (const ch of text) h = Math.imul(h ^ ch.codePointAt(0), 16777619);
+    return h >>> 0;
+  }
+
+  const books = readBooks();
+  const totalPages = books.reduce((sum, b) => sum + b.pages, 0);
+  document.getElementById("count").textContent = books.length
+    ? `${books.length} кн. · ${totalPages} стр.` : "пока пусто";
+
+  let selected = null;
+  let currentFilter = "";
+
+  // Реплики Сиори: нажмите на неё — скажет что-нибудь ещё.
+  const LINES = books.length ? [
+    "Что почитаем сегодня?",
+    "Ещё одну главу… и спать!",
+    `Уже ${books.length} кн. на полке ✨`,
+    "Не забудь закладку 🔖 /mark",
+    "Тыкни на книжку — пришлю её в чат!",
+    "Свет выключили? Зато книжки с нами 🕯️",
+  ] : ["Полка пустая… Пришли боту ссылку на главу!", "Я подожду тут 🌸"];
+  let line = Math.floor(Math.random() * LINES.length);
+  const bubble = document.getElementById("bubble");
+  const mascot = document.getElementById("mascot");
+  bubble.textContent = LINES[line];
+  mascot.onclick = () => {
+    line = (line + 1) % LINES.length;
+    bubble.textContent = LINES[line];
+    mascot.classList.remove("bounce");
+    void mascot.getBoundingClientRect();
+    mascot.classList.add("bounce");
+  };
+
+  // Звуковой эффект, как в манге, над выбранной книгой.
+  function sfx(el) {
+    const rect = el.getBoundingClientRect();
+    const s = document.createElement("span");
+    s.className = "sfx";
+    s.textContent = ["ポン!", "キラッ", "ドキッ", "パッ!"][Math.floor(Math.random() * 4)];
+    s.style.left = rect.left + rect.width / 2 + "px";
+    s.style.top = rect.top - 10 + "px";
+    document.body.appendChild(s);
+    setTimeout(() => s.remove(), 900);
+  }
+
+  function render(filter) {
+    currentFilter = filter;
+    const shown = books.filter(b => b.title.toLowerCase().includes(filter.toLowerCase()));
+    const bookcase = document.getElementById("case");
+    bookcase.innerHTML = "";
+    if (!shown.length) {
+      bookcase.innerHTML = books.length
+        ? `<div class="empty"><span class="big">🔍</span>Ничего не нашлось</div>`
+        : `<div class="empty"><span class="big">🌸</span>Полка пока пустая.<br>Пришлите боту ссылку на главу — и здесь появится первая книга.</div>`;
+      return;
+    }
+    const frame = document.createElement("div");
+    frame.className = "bookcase";
+    bookcase.appendChild(frame);
+    // Рамки шкафа и полки плюс запас под наклонённую книгу.
+    const shelves = packShelves(shown, frame.clientWidth - 26 - 17 - 8);
+    shelves.forEach((row, index) => {
+      const shelf = document.createElement("div");
+      shelf.className = "shelf";
+      row.forEach((book, j) => {
+        const h = hash(book.title);
+        const el = document.createElement("button");
+        el.className = "book";
+        el.style.width = bookWidth(book) + "px";
+        el.style.height = (118 + h % 34) + "px";
+        el.style.background = COLORS[h % COLORS.length];
+        if (index === shelves.length - 1 && j === row.length - 1 && h % 2) el.classList.add("tilt");
+        el.innerHTML = `<span class="band top"></span><span class="star">${book.pages >= 100 ? "★" : "✦"}</span>`
+          + `<span class="spine"></span><span class="band bottom"></span><span class="fmt">${book.fmt.toUpperCase()}</span>`;
+        el.querySelector(".spine").textContent = book.title;
+        el.onclick = () => choose(book, el);
+        shelf.appendChild(el);
+      });
+      if (index === shelves.length - 1) {
+        const decor = document.createElement("span");
+        decor.className = "decor";
+        decor.textContent = DECOR[books.length % DECOR.length];
+        shelf.appendChild(decor);
+      }
+      frame.appendChild(shelf);
+    });
+  }
+
+  let resizeTimer;
+  addEventListener("resize", () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => { if (!selected) render(currentFilter); }, 150);
+  });
+
+  function choose(book, el) {
+    document.querySelectorAll(".book.selected").forEach(b => b.classList.remove("selected"));
+    if (selected && selected.id === book.id) { close(); return; }
+    selected = book;
+    el.classList.add("selected");
+    sfx(el);
+    bubble.textContent = `«${book.title}» — хороший выбор!`;
+    document.getElementById("sheet-title").textContent = book.title;
+    document.getElementById("sheet-meta").textContent = `${book.pages} стр. · ${book.fmt.toUpperCase()}`;
+    document.getElementById("sheet").classList.add("open");
+    if (tg) {
+      tg.HapticFeedback && tg.HapticFeedback.selectionChanged();
+      tg.MainButton.setText("📥 Прислать в чат").show();
+      document.getElementById("send").style.display = "none";
+    }
+  }
+
+  function close() {
+    selected = null;
+    document.querySelectorAll(".book.selected").forEach(b => b.classList.remove("selected"));
+    document.getElementById("sheet").classList.remove("open");
+    if (tg) tg.MainButton.hide();
+  }
+
+  function send() {
+    if (!selected) return;
+    if (tg) {
+      tg.sendData(JSON.stringify({ book: selected.id }));  // Telegram закроет полку сам
+    } else {
+      document.getElementById("sheet-hint").textContent = "Откройте полку из Telegram, чтобы получить файл";
+    }
+  }
+
+  document.getElementById("send").onclick = send;
+  if (tg) tg.MainButton.onClick(send);
+  document.getElementById("search").oninput = e => { close(); render(e.target.value); };
+  render("");
+</script>
+</body>
+</html>
